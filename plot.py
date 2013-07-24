@@ -59,11 +59,12 @@ if __name__ == "__main__":
     print round( timedeltas_above_double_average_percent ),
     print "%"
 
+    first_timestamp = timestamps[0]
     last_timestamp = timestamps[-1]
 
     print "Last timestamp", timestamps[-1]
     print "Maximal timestamp", max( timestamps )
-    print "Average frequency", float( len( timestamps ) ) / ( float( last_timestamp ) / 1000 ) 
+    print "Average frequency", float( len( timestamps ) ) / ( float( last_timestamp - first_timestamp ) / 1000 ) 
 
 
     delta_t = DataFrame( delta_t )

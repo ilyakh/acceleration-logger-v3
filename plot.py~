@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
         data = pandas.io.parsers.read_csv( 
             "/Volumes/TUSENFRYD2/LOG{number}.TXT".format( number=number ),
-            index_col=True,
+            index_col=False,
             names=['time',
                    'accel_x', 'accel_y', 'accel_z', 
                    'gyro_x', 'gyro_y', 'gyro_z' ],
@@ -59,6 +59,7 @@ if __name__ == "__main__":
     print round( timedeltas_above_double_average_percent ),
     print "%"
 
+    first_timestamp = timestamps[0]
     last_timestamp = timestamps[-1]
 
     print "Last timestamp", timestamps[-1]

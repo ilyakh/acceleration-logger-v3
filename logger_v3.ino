@@ -21,13 +21,12 @@ uint8_t fifoBuffer[64]; // FIFO storage buffer
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
 VectorInt16 aa;         // [x, y, z]            accel sensor measurements
-VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
-VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measurements
 VectorInt16 rotation;
-VectorFloat gravity;    // [x, y, z]            gravity vector
-
-float euler[3];         // [psi, theta, phi]    Euler angle container
-float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
+// VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
+// VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measurements
+// VectorFloat gravity;    // [x, y, z]            gravity vector
+// float euler[3];         // [psi, theta, phi]    Euler angle container
+// float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
 
 
@@ -65,14 +64,6 @@ void setup() {
     Serial2.println(F("Testing device connections..."));
     Serial2.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
 
-    // wait for ready
-    /*
-    Serial2.println(F("\nSend any character to begin DMP programming and demo: "));
-    while (Serial2.available() && Serial2.read()); // empty buffer
-    while (!Serial2.available());                 // wait for data
-    while (Serial2.available() && Serial2.read()); // empty buffer again
-    */
-
     // load and configure the DMP
     Serial2.println(F("Initializing DMP..."));
     devStatus = mpu.dmpInitialize();
@@ -83,10 +74,12 @@ void setup() {
     // ===                      SETTINGS                            ===
     // ================================================================
         
-    mpu.setRate( 5 );
+    mpu.setRate( 20 );
     
     mpu.setFullScaleGyroRange( MPU6050_GYRO_FS_250 );
     mpu.setFullScaleAccelRange( MPU6050_ACCEL_FS_8 );
+    
+    Serial2.begin( 345600 ); 
     
     // debug info
     Serial2.print( "Accelerometer sample rate: " );
@@ -110,20 +103,21 @@ void setup() {
 
         // get expected DMP packet size for later comparison
         packetSize = mpu.dmpGetFIFOPacketSize();
+        
     } else {
         // ERROR!
         // 1 = initial memory load failed
         // 2 = DMP configuration updates failed
         // (if it's going to break, usually the code will be 1)
-        Serial2.print(F("DMP Initialization failed (code "));
-        Serial2.print(devStatus);
-        Serial2.println(F(")"));
-        
-        // OpenLog initialization
-  
-        Serial2.begin( 115200 );      
+        Serial2.print( F("DMP Initialization failed (code ") );
+        Serial2.print( devStatus );
+        Serial2.println( F(")") );           
         
     }
+    
+    
+    FlexiTimer2::set( 20, readSensors );
+    FlexiTimer2::start();
 
     // configure LED for output
     pinMode(LED_PIN, OUTPUT);
@@ -131,93 +125,34 @@ void setup() {
 
 
 
-// ================================================================
-// ===                    MAIN PROGRAM LOOP                     ===
-// ================================================================
+void readSensors() {
+
+  
+  Serial2.print( millis() );
+  Serial2.print( "," );
+  
+  Serial2.print( aa.x );
+  Serial2.print( "," );
+  Serial2.print( aa.y );
+  Serial2.print( "," );
+  Serial2.print( aa.z );
+  Serial2.print( "," );
+  
+  Serial2.print( rotation.x );
+  Serial2.print( "," );
+  Serial2.print( rotation.y );
+  Serial2.print( "," );
+  Serial2.print( rotation.z );   
+  
+  // end record
+  Serial2.println();
+  
+  
+}
 
 void loop() {
-    // if programming failed, don't try to do anything
-    if (!dmpReady) return;
-
-    // wait for MPU interrupt or extra packet(s) available
-    while (!mpuInterrupt && fifoCount < packetSize) {
-        // other program behavior stuff here
-        // .
-        // .
-        // .
-        // if you are really paranoid you can frequently test in between other
-        // stuff to see if mpuInterrupt is true, and if so, "break;" from the
-        // while() loop to immediately process the MPU data
-        // .
-        // .
-        // .
-        
-        // read and save dmp sensor values
-        mpu.dmpGetAccel( &aa, fifoBuffer );
-        mpu.dmpGetQuaternion( &q, fifoBuffer );
-        
-        // read and save the raw sensor values
-        // mpu.getAcceleration( &aa.x, &aa.y, &aa.z );
-        // mpu.getRotation( &rotation.x, &rotation.y, &rotation.z );        
-        
-        
-        Serial2.print( millis() );
-        Serial2.print( "," );
-        Serial2.print( aa.x );
-        Serial2.print( "," );
-        Serial2.print( aa.y );
-        Serial2.print( "," );
-        Serial2.print( aa.z );
-        
-        Serial2.print( "," );
-        Serial2.print( q.w );
-        Serial2.print( "," );
-        Serial2.print( q.x );
-        Serial2.print( "," );
-        Serial2.print( q.y );
-        Serial2.print( "," );
-        Serial2.print( q.z );        
-        
-        // end record
-        Serial2.println();
-        
-        
-    }
-
-    // reset interrupt flag and get INT_STATUS byte
-    mpuInterrupt = false;
-    mpuIntStatus = mpu.getIntStatus();
-
-    // get current FIFO count
-    fifoCount = mpu.getFIFOCount();
-
-    // check for overflow (this should never happen unless our code is too inefficient)
-    if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
-        // reset so we can continue cleanly
-        mpu.resetFIFO();
-        Serial2.println(F("FIFO overflow!"));
-
-    // otherwise, check for DMP data ready interrupt (this should happen frequently)
-    } else if (mpuIntStatus & 0x02) {
-        // wait for correct available data length, should be a VERY short wait
-        while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
-
-        // read a packet from FIFO
-        mpu.getFIFOBytes(fifoBuffer, packetSize);
-        
-        // track FIFO count here in case there is > 1 packet available
-        // (this lets us immediately read more without waiting for an interrupt)
-        fifoCount -= packetSize;
-        
-        
-
-        
-
-        
-        
-
-        // blink LED to indicate activity
-        blinkState = !blinkState;
-        digitalWrite(LED_PIN, blinkState);
-    }
+  
+    mpu.getAcceleration( &aa.x, &aa.y, &aa.z );
+    mpu.getRotation( &rotation.x, &rotation.y, &rotation.z );
+    
 }
