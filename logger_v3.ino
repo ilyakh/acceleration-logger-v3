@@ -29,7 +29,7 @@ VectorInt16 rotation;
 // float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
 
-int FREQUENCY_DELAY = 10;
+int FREQUENCY_DELAY = 5;
 
 
 
@@ -52,8 +52,9 @@ void dmpDataReady() {
 void setup() {
     // join I2C bus (I2Cdev library doesn't do this automatically)
     Wire.begin();
+    TWBR = 12; // change I2C to 400 mHz
     
-    Serial2.begin( 115200 );
+    Serial2.begin( 921600 );
     while (!Serial2); // wait for Leonardo enumeration, others continue immediately
     
     // initialize device
@@ -79,8 +80,6 @@ void setup() {
     mpu.setRate( FREQUENCY_DELAY );
     mpu.setFullScaleGyroRange( MPU6050_GYRO_FS_500 );
     mpu.setFullScaleAccelRange( MPU6050_ACCEL_FS_8 );
-    
-    Serial2.begin( 115200 ); 
     
     // debug info
     Serial2.print( "Accelerometer sample rate: " );
@@ -116,12 +115,15 @@ void setup() {
         
     }
     
+    delay( 1000 );
     
     FlexiTimer2::set( FREQUENCY_DELAY, store );
     FlexiTimer2::start();
 
     // configure LED for output
     pinMode( LED_PIN, OUTPUT );
+    
+
 }
 
 
