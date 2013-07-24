@@ -14,7 +14,7 @@ if __name__ == "__main__":
     try:
 
         data = pandas.io.parsers.read_csv( 
-            "/Volumes/TUSENFRYD2/LOG{number}.TXT".format( number=number ),
+            "/Volumes/NO NAME/LOG{number}.TXT".format( number=number ),
             index_col=False,
             names=['time',
                    'accel_x', 'accel_y', 'accel_z', 

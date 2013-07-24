@@ -14,7 +14,7 @@ VectorInt16 rotation;
 int SENSOR_DELAY = 5; // 200 Hz
 int WRITE_DELAY = 10; // 100 Hz
 
-int LOGGER_BAUDRATE = 921600;
+int LOGGER_BAUDRATE = 345600;
 
 volatile int counter = 0;
 volatile long sum[6];
@@ -36,9 +36,10 @@ void setup() {
     mpu.setRate( SENSOR_DELAY );
     mpu.setFullScaleGyroRange( MPU6050_GYRO_FS_500 );
     mpu.setFullScaleAccelRange( MPU6050_ACCEL_FS_8 );
+
+    Serial2.begin( 921600 );
         
     FlexiTimer2::set( WRITE_DELAY, store );
-    Serial2.begin( LOGGER_BAUDRATE );
     FlexiTimer2::start();
         
 }
