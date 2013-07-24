@@ -52,7 +52,7 @@ void setup() {
     // join I2C bus (I2Cdev library doesn't do this automatically)
     Wire.begin();
     
-    Serial2.begin( 115200 );
+    Serial2.begin( 345600 );
     while (!Serial2); // wait for Leonardo enumeration, others continue immediately
     
     // initialize device
@@ -155,7 +155,6 @@ void loop() {
         // read and save dmp sensor values
         mpu.dmpGetAccel( &aa, fifoBuffer );
         mpu.dmpGetQuaternion( &q, fifoBuffer );
-        mpu.dmpGetYawPitchRoll( ypr, &q, &gravity );
         
         // read and save the raw sensor values
         // mpu.getAcceleration( &aa.x, &aa.y, &aa.z );
@@ -171,12 +170,13 @@ void loop() {
         Serial2.print( aa.z );
         
         Serial2.print( "," );
-        Serial2.print( ypr[0] );
+        Serial2.print( q.w );
         Serial2.print( "," );
-        Serial2.print( ypr[1] );
+        Serial2.print( q.x );
         Serial2.print( "," );
-        Serial2.print( ypr[2] );
-        
+        Serial2.print( q.y );
+        Serial2.print( "," );
+        Serial2.print( q.z );        
         
         // end record
         Serial2.println();
