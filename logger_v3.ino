@@ -11,60 +11,19 @@ VectorInt16 rotation;
 
 
 
+int SENSOR_DELAY = 5; // 200 Hz
+int WRITE_DELAY = 10; // 100 Hz
 
-
-int FREQUENCY_DELAY = 50;
-
-int WRITE_DELAY = 50;
-int SAMPLE_DELAY = 10;
-
-int LOGGER_BAUDRATE = 115200;
+int LOGGER_BAUDRATE = 921600;
 
 volatile int counter = 0;
 volatile long sum[6];
 
 
 enum Coordinates {
-  ax,
-  ay,
-  az,
- 
-  rx,
-  ry,
-  rz 
+  ax, ay, az,
+  rx, ry, rz 
 };
-
-
-void store() {
-
- 
-    Serial.print( millis() );
-    Serial.print( "," );
-    Serial.print( counter );
-    Serial.print( "," );
-    
-    Serial.print( sum[ax] / counter );
-    Serial.print( "," );
-    Serial.print( sum[ay] / counter );
-    Serial.print( "," );
-    Serial.print( sum[az] / counter );
-    Serial.print( "," );
-    
-    Serial.print( sum[rx] / counter );
-    Serial.print( "," );
-    Serial.print( sum[ry] / counter );
-    Serial.print( "," );
-    Serial.print( sum[rz] / counter );
-    
-    Serial.println();
-    
-    // reset
-    sum[ax] = 0; sum[ay] = 0; sum[az] = 0;
-    sum[rx] = 0; sum[ry] = 0; sum[rz] = 0;
-    
-    counter = 0; 
-    
-}
 
 
 
@@ -72,19 +31,22 @@ void setup() {
     
     Wire.begin();
     
-    Serial.begin( 115200 );
     mpu.initialize();
-        
-    mpu.setRate( SAMPLE_DELAY );
+    
+    mpu.setRate( SENSOR_DELAY );
     mpu.setFullScaleGyroRange( MPU6050_GYRO_FS_500 );
     mpu.setFullScaleAccelRange( MPU6050_ACCEL_FS_8 );
-    
+        
     FlexiTimer2::set( WRITE_DELAY, store );
+    Serial2.begin( LOGGER_BAUDRATE );
     FlexiTimer2::start();
+        
 }
 
 
+
 void loop() {
+    
     mpu.getAcceleration( &acceleration.x, &acceleration.y, &acceleration.z );
     mpu.getRotation( &rotation.x, &rotation.y, &rotation.z );
     
@@ -99,4 +61,35 @@ void loop() {
     
     counter++;
 
+}
+
+void store() {
+ 
+    Serial2.print( millis() );
+    Serial2.print( "," );
+    Serial2.print( counter );
+    Serial2.print( "," );
+    
+    Serial2.print( sum[ax] / counter );
+    Serial2.print( "," );
+    Serial2.print( sum[ay] / counter );
+    Serial2.print( "," );
+    Serial2.print( sum[az] / counter );
+    Serial2.print( "," );
+    
+    Serial2.print( sum[rx] / counter );
+    Serial2.print( "," );
+    Serial2.print( sum[ry] / counter );
+    Serial2.print( "," );
+    Serial2.print( sum[rz] / counter );
+    
+    Serial2.println();
+
+    
+    // reset
+    sum[ax] = 0; sum[ay] = 0; sum[az] = 0;
+    sum[rx] = 0; sum[ry] = 0; sum[rz] = 0;
+    
+    counter = 0; 
+    
 }
