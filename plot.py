@@ -6,15 +6,86 @@ from pandas import DataFrame
 
 if __name__ == "__main__":
 
+
+
+    FIELD_SEPARATOR = ","
+    ENTRY_SEPARATOR = "\n"
+
+
     try:
         number = sys.argv[1]
+        path = "/Volumes/NO NAME/LOG{number}.TXT".format( number=number )
+        path = "/Users/ilyakh/Documents/Arduino/logger_v3/test.txt"
     except IndexError:
         sys.exit("missing log-file number as first command argument");
+
+
+    # fix data
+
+    with open( path ) as target:
+        readings = target.read().strip().split( ENTRY_SEPARATOR )
+
+        split_lines = []
+
+        for r in readings:
+            split_lines.append(
+                 [ f for f in r.split( FIELD_SEPARATOR ) ]
+            )
+
+        # calculate the average number of fields in each entry (on each line)
+        field_counts = [ len(l) for l in split_lines ]
+
+        # [/] not a very precise way of doing things, use count vs. product
+        average_field_count = float( sum(field_counts) ) / len(field_counts)
+
+        # [i] when you know what the average is, you can warn user if the data is corrupt or not
+
+        if round( average_field_count, 0) == average_field_count:
+            print "The number of fields is correct for each reading"
+        else:
+            print "The number of fields is NOT CORRECT"
+
+        # [->] begins to analyze the type features and ranges
+
+        # remove all lines that do not conform the schema
+
+        print "Average number of fields on each line: ", average_field_count
+
+        lines_with_right_size = []
+        for l in split_lines:
+            if len(l) == int(round( average_field_count, 0)):
+                lines_with_right_size.append(l)
+
+        print "{0} lines were malformed. These are excluded from resulting dataset".format(
+            len(split_lines) - len(lines_with_right_size)
+        )
+
+        lines_with_right_format = []
+        for l in lines_with_right_size:
+            try:
+                lines_with_right_format.append(
+                    [ int(i) for i in l.strip().split( FIELD_SEPARATOR ) ]
+                )
+            except ValueError:
+                continue
+
+        print "{0} lines were malformed. These are excluded from resulting dataset".format(
+            len(lines_with_right_size) - len( lines_with_right_format )
+        )
+
+        # [->] finally, check ranges
+
+
+
+
+
+
+
 
     try:
 
         data = pandas.io.parsers.read_csv( 
-            "/Volumes/NO NAME/LOG{number}.TXT".format( number=number ),
+            path,
             index_col=False,
             names=['time',
                    'accel_x', 'accel_y', 'accel_z', 
